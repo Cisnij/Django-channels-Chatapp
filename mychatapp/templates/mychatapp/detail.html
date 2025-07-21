@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Chat</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-SgOJa3DmI69IUzQ2PVdRZhwQ+dy64/BUtbMJw1MZ8t5HZApcHrRKUc4W0kG879m7" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js" integrity="sha384-k6d4wzSIapyDyv1kpU366/PK5hCdSbCRGRCMv+eplOQJWyd1fbcAu9OCUj5zNLiq" crossorigin="anonymous"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/6.4.2/mdb.min.css" rel="stylesheet" />
+</head>
+<style>
+
+.chat-footer form {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  gap: 10px; /* Khoảng cách giữa textarea và button */
+}
+
+#id_mess {
+  width: 70%; /* Chiếm 70% chiều ngang */
+  min-height: 45px; /* Đủ để gõ thoải mái */
+  max-height: 120px; /* Nếu gõ nhiều thì nó có thể lớn thêm */
+  overflow-y: auto;
+  resize: none; /* Không cho kéo */
+  padding: 10px 15px;
+  border-radius: 20px;
+  border: 1px solid #ccc;
+  background-color: #f0f2f5;
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+#button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 20px;
+  background-color: #0084ff;
+  color: white;
+  font-weight: bold;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+#button:hover {
+  background-color: #006fe6;
+}
+
+
+  /* Cập nhật để khung chat chiếm 100% chiều rộng */
+  .chat-container {
+    background-color: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 80vh; /* 80% chiều cao màn hình */
+    width: 70%;   /* 👉 Chỉnh 70% chiều rộng */
+    margin: auto; /* 👉 Canh giữa màn hình */
+  }
+
+  .chat-header {
+    background-color: #0084ff;
+    color: white;
+    padding: 10px 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+  }
+
+  .chat-header p {
+    margin: 0;
+    font-weight: bold;
+  }
+
+  /* Phần body chứa tin nhắn */
+  .chat-body {
+    padding: 10px;
+    flex: 1;
+    overflow-y: auto; /* Cho phép cuộn khi tin nhắn vượt quá chiều cao */
+    max-height: 70%; /* Giới hạn chiều cao của phần chứa tin nhắn */
+    background-color: #f7f7f8;
+  }
+
+  .message {
+    display: flex;
+    margin-bottom: 10px;
+  }
+
+  .message .avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    margin-right: 10px;
+  }
+
+  .message .content {
+    max-width: 70%;
+    padding: 8px 12px;
+    border-radius: 15px;
+    font-size: 14px;
+  }
+
+  /* Tin nhắn của người gửi */
+  .message.sent .content {
+    background-color: #0084ff;
+    color: white;
+    margin-left: auto;
+  }
+
+  /* Tin nhắn của người nhận */
+  .message.received .content {
+    background-color: #e4e6eb;
+    color: black;
+  }
+
+  .chat-footer {
+  padding: 10px;
+  background-color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Canh đều hai bên */
+  border-top: 1px solid #ddd;
+}
+
+
+
+  .chat-footer input {
+    border: none;
+    outline: none;
+    padding: 10px;
+    width: 85%;
+    border-radius: 20px;
+    margin-right: 10px;
+    background-color: #f0f2f5;
+  }
+
+  .chat-footer button {
+    padding: 10px 15px;
+    background-color: #0084ff;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+  }
+
+  .chat-footer button:hover {
+    background-color: #0073e6;
+  }
+</style>
+
+<body>
+<section>
+    
+    <div class="container py-5">
+      <a href="{%url 'home'%}">🔙</a>
+        <div class="row d-flex justify-content-center">
+            <div class="col-md-12 col-lg-12 col-xl-12"> <!-- Cập nhật để chiếm toàn bộ chiều rộng -->
+                <div class="card chat-container">
+                    <!-- Header -->
+                    <div class="chat-header">                      
+                        <i class="fas fa-angle-left"></i>                       
+                        <p class="mb-0 fw-bold">{{friend.profile.name}}</p>
+                        <i class="fas fa-times"></i>
+                    </div>
+
+                    <!-- Chat Body with Messages -->
+                    <div class="chat-body" id="chat-body">
+                    {% for i in message %}
+                      {% if i.sender.lower != username.lower %}
+                        <div class="message received">
+                          <img src="{{ i.sender.profile.pic.url }}" alt="avatar" class="avatar">
+                          <div class="content">
+                            <p class="small mb-0">{{ i.content }}</p>
+                          </div>
+                        </div>    
+                      {% else %}
+                        <div class="message sent">
+                          <div class="content">
+                            <p class="small mb-0">{{ i.content }}</p>
+                          </div>
+                          
+                        </div>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+
+
+                    <!-- Footer with input field -->
+                    <div class="chat-footer">
+                        <form action="" id="myform" method="POST">
+                            {% csrf_token %}
+                            {{ form }}
+                            <button id="button" type="submit">Send</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Xử lý để gửi tin nhắn k phải load lại trang -->
+<script>
+
+     function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0,name.length +1)=== (name + '=')) { 
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        var csrftoken = getCookie('csrftoken');
+
+
+  let form =document.getElementById('myform');
+  form.addEventListener('submit',SendChat)
+  function SendChat(e){
+    e.preventDefault(); // Ngăn chặn hành động load lại trang
+    let chatMessage= document.getElementById('id_mess').value; // Lấy giá trị của ô nhập liệu;
+    var url="{% url 'sendMessage' friend.profile.id %}"
+    fetch(url,{
+        method:'POST',
+        headers:{
+            'Content-Type':'application/json',
+            'X-CSRFToken':csrftoken,
+        },
+        body: JSON.stringify({msg: chatMessage}) // Chuyển đổi dữ liệu thành JSON
+    })
+    .then((response)=>{
+        return response.json() //Đẩy dữ liệu về dạng json lên views.by từ cái jsonload
+        })
+    .then((data)=>{
+         //Sau đó nhận dữ liệu về từ server và đẩy lên web
+        // Xử lý thêm vào html đoạn tin nhắn      
+        let chatBody= document.getElementById('chat-body')
+        let ChatMessage = document.createElement("div") //tạo div mơi 
+        ChatMessage.classList.add("message", "sent") //thừa kế 
+        ChatMessage.innerHTML=`
+        <div class="content">
+            <p class="small mb-0">${data.mess}</p>  
+        </div>
+        <img src="${data.avatar}" alt="avatar" class="avatar">`
+        chatBody.append(ChatMessage) //thêm vào chatbody
+        chatBody.scrollTop = chatBody.scrollHeight; // Cuộn xuống dưới cùng khi có tin nhắn mới
+        document.getElementById('id_mess').value =""; // Xóa ô nhập liệu sau khi gửi
+        
+    })
+  }
+  let counter ={{num}};
+  let msgtext="";
+  setInterval(ReceiveMessage, 1000); // Gọi hàm mỗi giây
+
+  // Hàm này sẽ được gọi mỗi 2 giây để kiểm tra tin nhắn mới sau load
+  function ReceiveMessage()
+  {
+    var url="{% url 'receiveMessage' friend.profile.id %}"
+    fetch(url)
+    .then((response)=>{
+        return response.json()
+        })
+    .then((data)=>{
+        if(data.message.length==0)
+        {
+          return;
+        }
+        else{
+            let LastMsg= data.message[data.message.length-1];
+            if(counter==data.message.length)
+            {
+              
+              return;
+            }
+            else if(msgtext==LastMsg)
+            {
+              
+              return;
+            }
+            else
+            {     
+              let chatBody= document.getElementById('chat-body')
+              let ChatMessage = document.createElement("div") //tạo div mơi 
+              ChatMessage.classList.add("message", "received") //thừa kế 
+              ChatMessage.innerHTML=`
+              <img src="${data.avatar}" alt="avatar" class="avatar">
+              <div class="content">
+              <p class="small mb-0"> ${LastMsg} </p>
+              </div>`
+              chatBody.append(ChatMessage) //thêm vào chatbody
+              chatBody.scrollTop = chatBody.scrollHeight; // Cuộn xuống dưới cùng khi có tin nhắn mới
+              document.getElementById('id_mess').value =""; // Xóa ô nhập liệu sau khi gửi
+              msgtext=LastMsg;
+            }
+            
+        }
+        counter = data.message.length;
+        
+    })
+
+  }
+
+  
+
+</script>
+</body>
+</html>
